@@ -8,10 +8,14 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+
+import java.io.File;
+import java.util.List;
+
+import static com.gm.student_management.StudentCSV.loadCsv;
 
 public class Mainapp extends Application {
     private void clearF(TextField... fields) {
@@ -42,19 +46,18 @@ public class Mainapp extends Application {
         TextField lop = new TextField();
 
 
-        Button add = new Button("Thêm mới");
-        Button huy = new Button("Hủy");
-        HBox button = new HBox(10);
-        button.getChildren().addAll(add, huy);
-
-
         grid.add(title,0,0);
-        grid.add(lbten,0,1);  grid.add(ten,1,1);
-        grid.add(lbsex,0,2);  grid.add(gt, 1, 2);
-        grid.add(lbbirth,0,3);  grid.add(birth, 1, 3);
-        grid.add(lbmasv,0,4); grid.add(masv,1,4);
-        grid.add(lblop,0,5); grid.add(lop,1,5);
-        grid.add(button, 1, 6);
+        HBox h1 = new HBox(5, lbten, ten);
+        HBox h2 = new HBox(5,  lbsex, gt);
+        HBox h3 = new HBox(5,  lbbirth, birth);
+        HBox h4 = new HBox(5,  lbmasv, masv);
+        HBox h5 = new HBox(5,  lblop, lop);
+
+        grid.add(h1, 0, 1, 2, 1);
+        grid.add(h2, 0, 2, 2, 1);
+        grid.add(h3, 0, 3, 2, 1);
+        grid.add(h4, 0, 4, 2, 1);
+        grid.add(h5, 0, 5, 2, 1);
 
         TableView<Sinhvien> table = new TableView<>(sinhvien);
         TableColumn<Sinhvien, String> colid = new TableColumn<>("Mã sinh viên");
@@ -64,6 +67,7 @@ public class Mainapp extends Application {
 
         TableColumn<Sinhvien, String> colten = new TableColumn<>("Họ và tên");
         colten.setCellValueFactory(new PropertyValueFactory<>("ten"));
+        colten.setPrefWidth(250);   //dat chieu ngang cho cot
         colten.setCellFactory(TextFieldTableCell.forTableColumn());
         colten.setOnEditCommit(e -> e.getRowValue().setTen(e.getNewValue()));
 
@@ -84,6 +88,7 @@ public class Mainapp extends Application {
 
         table.getColumns().addAll(colid, colten, colbirth, colsex, collop);
         table.setPrefHeight(200);
+        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
         Button xoahang = new Button("Xóa");
         xoahang.setOnAction(e -> {
@@ -94,6 +99,50 @@ public class Mainapp extends Application {
             if(e.getClickCount() == 2){
                 TablePosition p = table.getSelectionModel().getSelectedCells().get(0);
                 table.edit(p.getRow(), p.getTableColumn());
+            }
+        });
+        table.setEditable(true);
+
+        Button add = new Button("Thêm mới");
+        Button huy = new Button("Hủy");
+        HBox button = new HBox(10);
+        Button savefi = new Button("Lưu bảng");
+        Button loadfi = new Button("Mở bảng");
+        button.getChildren().addAll(add, huy, savefi,loadfi, xoahang);
+        grid.add(button, 0, 6);
+
+        savefi.setOnAction(e -> {
+            FileChooser fc = new FileChooser();
+            fc.setTitle("Chọn nơi lưu file");
+            fc.getExtensionFilters().add(new  FileChooser.ExtensionFilter("CSV files", "*.txt"));
+
+            File file = fc.showSaveDialog(stage);
+            if(file != null){
+                try {
+                    StudentCSV.saveCsv(file.getAbsolutePath(), sinhvien);
+                    Alert save = new Alert(Alert.AlertType.INFORMATION, "Đã lưu file");
+                    save.show();
+                } catch (Exception ex) {
+                    ex.printStackTrace();    // tranh tat may khi gap loi
+                }
+            }
+        });
+        loadfi.setOnAction(e -> {
+            FileChooser fc = new FileChooser();
+            fc.setTitle("Chọn file CSV để mở");
+            fc.getExtensionFilters().add(new  FileChooser.ExtensionFilter("CSV files", "*.csv"));
+
+            File file = fc.showOpenDialog(stage);
+            if(file != null){
+                try{
+                    List<Sinhvien> list = loadCsv(file.getAbsolutePath());
+                    sinhvien.clear();
+                    sinhvien.addAll(list);
+                    Alert load = new Alert(Alert.AlertType.INFORMATION, "Đã load file");
+                    load.show();
+                } catch(Exception ex){
+                    ex.printStackTrace();
+                }
             }
         });
 
@@ -124,9 +173,12 @@ public class Mainapp extends Application {
 
         huy.setOnAction(e -> clearF(ten, birth, masv, lop));
 
-        VBox bang = new VBox(10, grid, table);
-        bang.setPadding(new Insets(10));
-        Scene scene = new Scene(bang,600,400);  //dung bang
+        BorderPane base =  new BorderPane();
+        base.setCenter(table);
+        base.setLeft(grid);
+        grid.setPrefWidth(400);
+
+        Scene scene = new Scene(base,1000,600);  //dung bang
         stage.setScene(scene);
         stage.setTitle("Student Management");
         stage.show();
