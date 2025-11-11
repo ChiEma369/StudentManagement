@@ -17,13 +17,15 @@ public class Mainapp extends Application {
 
     @Override
     public void start(Stage stage) {
+        System.out.println("Start Mainapp");
+
         TabSV tabSV = new TabSV(sinhvien, stage);
         TabDiem tabDiem = new TabDiem(sinhvien, stage);
 
         TabPane tabPane = new TabPane();
         tabPane.getTabs().addAll(tabSV, tabDiem);
 
-        Scene scene = new Scene(tabPane, 1000, 600);
+        Scene scene = new Scene(tabPane, 1200, 700);
         stage.setScene(scene);
         stage.setTitle("Student Management");
         stage.show();

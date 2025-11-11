@@ -1,7 +1,5 @@
 package com.gm.student_management;
 
-import javafx.beans.property.SimpleStringProperty;
-
 public class Diem {
     private Sinhvien sv;
     private String mon;
