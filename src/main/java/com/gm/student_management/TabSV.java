@@ -52,6 +52,7 @@ public class TabSV extends Tab {
 
 
         grid.add(title, 0, 0);
+
         HBox h1 = new HBox(5, lbten, ten);
         HBox h2 = new HBox(5, lbsex, gt);
         HBox h3 = new HBox(5, lbbirth, birth);
@@ -88,61 +89,41 @@ public class TabSV extends Tab {
         button.getChildren().addAll(add, huy, savefi, loadfi, xoahang);
         grid.add(button, 0, 6);
 
-        String path = System.getProperty("user.home") + File.separator + "Desktop" + File.separator + "svien.csv";
+        // load bang sinh vien
+        sinhvien.clear();
+        sinhvien.addAll(sinhvienDb.getAll());
 
-        if (new File(path).exists()) {
-            try {
-                List<Sinhvien> list = StudentCSV.loadCsv(path, sinhvien);
-                sinhvien.clear();
-                sinhvien.addAll(list);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        savefi.setOnAction(e -> {
-            try {
-                ;
-                StudentCSV.saveCsv(path, sinhvien);
-            } catch (Exception ex) {
-                ex.printStackTrace();    // tranh tat may khi gap loi
-            }
-        });
-        loadfi.setOnAction(e -> {
-            FileChooser fc = new FileChooser();
-            fc.setTitle("Chọn file CSV để mở");
-            fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV files", "*.csv"));
-
-            File file = fc.showOpenDialog(stage);
-            if (file != null) {
-                try {
-                    List<Sinhvien> list = loadCsv(file.getAbsolutePath(), table.getItems());
-                    sinhvien.clear();
-                    sinhvien.addAll(list);
-                    Alert load = new Alert(Alert.AlertType.INFORMATION, "Đã load file");
-                    load.show();
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
-            }
-        });
 
         add.setOnAction(e -> {
-            addSvien(masv.getText(), ten.getText(), birth.getText(), gt.getValue(), lop.getText());
+            Sinhvien sv = new Sinhvien(
+                    masv.getText(),
+                    ten.getText(),
+                    birth.getText(),
+                    gt.getValue(),
+                    lop.getText()
+            );
+
+            sinhvien.add(sv);
+            sinhvienDb.insert(sv);
+
+            clearF(ten, birth, masv, lop);
         });
+
         huy.setOnAction(e -> clearF(ten, birth, masv, lop));
 
-        BorderPane base = new BorderPane();
-        base.setLeft(grid);
-        base.setCenter(table);
-        grid.setPrefWidth(350);
-        base.setPadding(new Insets(10));
+        savefi.setOnAction(e -> {
+            new Alert(Alert.AlertType.INFORMATION,
+                    "Dữ liệu đã lưu tự động vào MySQL").show();
+        });
 
-        setContent(base);
-
+        loadfi.setOnAction(e -> {
+            sinhvien.clear();
+            sinhvien.addAll(sinhvienDb.getAll());
+            new Alert(Alert.AlertType.INFORMATION, "Đã nạp lại dữ liệu từ MySQL").show();
+        });
     }
 
-    private void clearF(TextField... fields) {
+        public void clearF(TextField... fields) {
         for (TextField f : fields) f.clear();
     }
 

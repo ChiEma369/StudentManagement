@@ -3,6 +3,8 @@ module com.gm.student_management {
     requires javafx.fxml;
     requires java.desktop;
     requires javafx.graphics;
+    requires java.sql;
+    requires javafx.base;
 
 
     opens com.gm.student_management to javafx.fxml;

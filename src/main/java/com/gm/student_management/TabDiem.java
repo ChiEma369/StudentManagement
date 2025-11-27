@@ -6,6 +6,7 @@ import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
@@ -14,9 +15,16 @@ import javafx.util.StringConverter;
 
 public class TabDiem extends Tab {
     private ObservableList<Diem> listDiem = FXCollections.observableArrayList();
+
     private ObservableList<Sinhvien> sinhvien;
     public TabDiem(ObservableList<Sinhvien> sinhvien, Stage stage) {
         setText("Quản lý điểm");
+        try {
+            listDiem.addAll(DB.getAllDiem()); // getAllDiem() trả về List<Diem> từ DB
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            new Alert(Alert.AlertType.ERROR, "Không thể load điểm từ database").show();
+        }
 
         ComboBox<String> cbMasv = new ComboBox<>();
         for(Sinhvien s: sinhvien){
@@ -50,6 +58,7 @@ public class TabDiem extends Tab {
                 "Triết học Mác_Lênin"
         );
 
+
         cbSV.setConverter(new StringConverter<Sinhvien>() {
             @Override
             public String toString(Sinhvien sv) {
@@ -63,6 +72,7 @@ public class TabDiem extends Tab {
         });
 
         TextField txtDiem = new TextField();
+        TextField txtMalop = new TextField();
         Button Them = new Button("Thêm điểm");
         Button xoa = new Button("Xóa");
         HBox button = new HBox(10);
@@ -70,8 +80,10 @@ public class TabDiem extends Tab {
         grid.add(new Label("Sinh viên:"), 0, 0); grid.add(cbSV, 1, 0);
         grid.add(new Label("Môn:"), 0, 1); grid.add(cbMon, 1, 1);
         grid.add(new Label("Điểm:"), 0, 2); grid.add(txtDiem, 1, 2);
+        Label lbml = new Label("Mã lớp");
+        grid.add(lbml,  0, 3);    grid.add(txtMalop, 1, 3);
         button.getChildren().addAll(Them, xoa);
-        grid.add(button, 1, 3);
+        grid.add(button, 1, 4);
 
         TableView<Diem> tableDiem = new TableView<>(listDiem);
         TableColumn<Diem, String> colMsv = new TableColumn<>("Mã sinh viên");
@@ -81,33 +93,58 @@ public class TabDiem extends Tab {
         colten.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getSv().getTen()));
         TableColumn<Diem, String> colmon = new TableColumn<>("Môn học");
         colmon.setCellValueFactory(new PropertyValueFactory<>("mon"));
+
+        TableColumn<Diem, String> colmalop = new TableColumn<>("Mã lớp");
+        colmalop.setCellValueFactory(new PropertyValueFactory<>("lop"));        //trung ten getter
+
         TableColumn<Diem, String> coldiem = new TableColumn<>("Điểm");
         coldiem.setCellValueFactory(new PropertyValueFactory<>("diem"));
+        TableColumn<Diem, String> colgpa = new TableColumn<>("GPA");
+        colgpa.setCellValueFactory(c -> new SimpleStringProperty(String.format("%.2f", c.getValue().getGPA())));
 
-        tableDiem.getColumns().addAll(colMsv, colten, colmon, coldiem);
+        tableDiem.getColumns().addAll(colMsv, colten, colmon, colmalop, coldiem, colgpa);
+        tableDiem.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
-        Them.setOnAction(e-> {
+        Them.setOnAction(e -> {
             Sinhvien sv = cbSV.getValue();
             String mon = cbMon.getValue();
+            String lop = txtMalop.getText().trim();
             String diemStr = txtDiem.getText().trim();
 
-            if (sv == null || mon == null || diemStr.isEmpty()) return;
+            if (sv == null || mon == null || diemStr.isEmpty() || lop.isEmpty()) return;
             double val;
             try {
                 val = Double.parseDouble(diemStr);
             } catch (NumberFormatException ex) {
-                Alert alert = new Alert(Alert.AlertType.ERROR, "Điểm phải là số!");
-                alert.show();
+                new Alert(Alert.AlertType.ERROR, "Điểm phải là số!").show();
                 return;
             }
-            Diem d = new Diem(sv, mon, val);
-            listDiem.add(d);
 
+            Diem d = new Diem(sv, mon, lop, val);
+            // 1. Thêm vào DB
+            try {
+                DB.insertDiem(d); // viết 1 method trong class DB để insert vào table diem
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                new Alert(Alert.AlertType.ERROR, "Lỗi lưu database!").show();
+                return;
+            }
+
+            listDiem.add(d);
             tableDiem.refresh();
         });
+
         xoa.setOnAction(e -> {
             Diem sel = tableDiem.getSelectionModel().getSelectedItem();
-            if (sel != null) listDiem.remove(sel);
+            if (sel != null) {
+                try {
+                    DB.deleteDiem(sel);
+                    listDiem.remove(sel);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    new Alert(Alert.AlertType.ERROR, "Lỗi xóa database!").show();
+                }
+            }
         });
         bp.setLeft(grid);
         bp.setCenter(tableDiem);
