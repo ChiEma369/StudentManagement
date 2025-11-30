@@ -58,7 +58,7 @@ public class sinhvienDb{
                     rs.getString("masv"),
                     rs.getString("ten"),
                     rs.getString("birth"),
-                    rs.getString("gt"),
+                    rs.getString("sex"),
                     rs.getString("lop")
             );
         }

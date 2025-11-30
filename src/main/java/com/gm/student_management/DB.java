@@ -74,6 +74,7 @@ public class DB {
         ResultSet rs = st.executeQuery("SELECT * FROM diem");
         while (rs.next()) {
             Sinhvien sv = sinhvienDb.findByMasv(rs.getString("masv"));
+
             if (sv != null) {
                 list.add(new Diem(sv, rs.getString("mon"), rs.getString("lop"), rs.getDouble("diem")));
             }
