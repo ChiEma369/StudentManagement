@@ -17,19 +17,20 @@ public class TabDiem extends Tab {
     private ObservableList<Diem> listDiem = FXCollections.observableArrayList();
 
     private ObservableList<Sinhvien> sinhvien;
-    public TabDiem(ObservableList<Sinhvien> sinhvien, Stage stage) {
-        setText("Quản lý điểm");
+    public void loadDiemData() {
         try {
-            listDiem.addAll(DB.getAllDiem()); // getAllDiem() trả về List<Diem> từ DB
+            // Xóa dữ liệu cũ trước khi tải
+            listDiem.clear();
+            // Gọi hàm tai
+            listDiem.addAll(DB.getAllDiem());
         } catch (Exception ex) {
             ex.printStackTrace();
-            new Alert(Alert.AlertType.ERROR, "Không thể load điểm từ database").show();
+            new Alert(Alert.AlertType.ERROR, "Không thể load điểm từ database. " + ex.getMessage()).show();
         }
+    }
+    public TabDiem(ObservableList<Sinhvien> sinhvien, Stage stage) {
+        setText("Quản lý điểm");
 
-        ComboBox<String> cbMasv = new ComboBox<>();
-        for(Sinhvien s: sinhvien){
-            cbMasv.getItems().add(s.getMasv());
-        }
         BorderPane bp = new BorderPane();
         GridPane grid = new GridPane();
         grid.setHgap(10);

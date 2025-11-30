@@ -12,11 +12,7 @@ import javafx.scene.layout.HBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
-
-import static com.gm.student_management.StudentCSV.loadCsv;
+import java.sql.SQLException;
 
 
 public class TabSV extends Tab {
@@ -24,6 +20,22 @@ public class TabSV extends Tab {
     private TableView<Sinhvien> table;
     private ObservableList<Sinhvien> sinhvien;
 
+    private void loadData() {
+        try {
+            sinhvien.clear(); // Xóa dữ liệu cũ trên giao diện
+            // SỬA: Gọi hàm getAll() từ lớp DAO
+            sinhvien.addAll(sinhvienDb.getAll());
+
+        } catch (SQLException e) {
+            // Xử lý nếu kết nối DB thất bại
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Lỗi CSDL");
+            alert.setHeaderText("Không thể tải dữ liệu sinh viên!");
+            alert.setContentText("Chi tiết lỗi: " + e.getMessage());
+            alert.show();
+            e.printStackTrace();
+        }
+    }
     public TabSV(ObservableList<Sinhvien> sinhvien, Stage stage) {
         this.sinhvien = sinhvien;
         setText("Quản lý sinh viên");
@@ -68,31 +80,27 @@ public class TabSV extends Tab {
         table = new TableView<>(sinhvien);
         createColumns();
 
-        Button xoahang = new Button("Xóa");
-        xoahang.setOnAction(e -> {
-            Sinhvien sel = table.getSelectionModel().getSelectedItem();
-            if (sel != null) sinhvien.remove(sel);
-        });
-        table.setOnMouseClicked(e -> {
-            if (e.getClickCount() == 2) {
-                TablePosition p = table.getSelectionModel().getSelectedCells().get(0);
-                table.edit(p.getRow(), p.getTableColumn());
-            }
-        });
         table.setEditable(true);
 
         Button add = new Button("Thêm mới");
         Button huy = new Button("Hủy");
+        Button xoahang = new Button("Xóa");
         HBox button = new HBox(10);
         Button savefi = new Button("Lưu bảng");
         Button loadfi = new Button("Mở bảng");
         button.getChildren().addAll(add, huy, savefi, loadfi, xoahang);
         grid.add(button, 0, 6);
 
-        // load bang sinh vien
-        sinhvien.clear();
-        sinhvien.addAll(sinhvienDb.getAll());
 
+        BorderPane pane =  new BorderPane();
+        pane.setLeft(grid);
+        pane.setCenter(table);
+
+        BorderPane.setMargin(grid, new Insets(0,20, 0, 0));
+        setContent(pane);
+
+        // load du lieu
+        loadData();
 
         add.setOnAction(e -> {
             Sinhvien sv = new Sinhvien(
@@ -109,6 +117,22 @@ public class TabSV extends Tab {
             clearF(ten, birth, masv, lop);
         });
 
+        xoahang.setOnAction(e -> {
+            Sinhvien sel = table.getSelectionModel().getSelectedItem();
+            if (sel != null) {
+                try {
+                    sinhvienDb.delete(sel); // <<< GỌI HÀM XÓA TRONG CSDL
+                    sinhvien.remove(sel);    // Xóa trên giao diện
+                    new Alert(Alert.AlertType.INFORMATION, "Đã xóa sinh viên thành công.").show();
+                } catch (SQLException ex) {
+                    new Alert(Alert.AlertType.ERROR, "Lỗi: Không thể xóa sinh viên khỏi CSDL. " + ex.getMessage()).show();
+                    ex.printStackTrace();
+                }
+            } else {
+                new Alert(Alert.AlertType.WARNING, "Vui lòng chọn một hàng để xóa.").show();
+            }
+        });
+
         huy.setOnAction(e -> clearF(ten, birth, masv, lop));
 
         savefi.setOnAction(e -> {
@@ -117,8 +141,7 @@ public class TabSV extends Tab {
         });
 
         loadfi.setOnAction(e -> {
-            sinhvien.clear();
-            sinhvien.addAll(sinhvienDb.getAll());
+            loadData();
             new Alert(Alert.AlertType.INFORMATION, "Đã nạp lại dữ liệu từ MySQL").show();
         });
     }

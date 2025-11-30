@@ -17,7 +17,7 @@ public class DB {
     }
     public static void insertDiem(Diem d) throws SQLException {
         String sql = "INSERT INTO diem (masv, mon, lop, diem) VALUES (?, ?, ?, ?)";
-        try (Connection conn = DriverManager.getConnection(URL, USER, PASS);
+        try (Connection conn = getConnect();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, d.getSv().getMasv());
@@ -55,7 +55,7 @@ public class DB {
                 String lop = rs.getString("lop");
                 double diemVal = rs.getDouble("diem");
 
-                Sinhvien sv = Mainapp.getSinhvien().stream()
+                Sinhvien sv = allSinhvien.stream() // <<< Dùng danh sách sinh viên được truyền vào
                         .filter(s -> s.getMasv().equals(masv))
                         .findFirst().orElse(null);
 

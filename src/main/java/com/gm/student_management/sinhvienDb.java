@@ -8,10 +8,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class sinhvienDb{
-    public static List<Sinhvien> getAll(){
+    public static List<Sinhvien> getAll() throws SQLException {
         List<Sinhvien> list = new ArrayList<>();
         String sql = "select * from sinhvien";
 
+        // BỎ KHỐI TRY-CATCH, ĐỂ CONTROLLER XỬ LÝ
         try(Connection conn = DB.getConnect();
             PreparedStatement  ps = conn.prepareStatement(sql);
             ResultSet rs = ps.executeQuery()) {
@@ -23,13 +24,12 @@ public class sinhvienDb{
                         rs.getString("birth"),
                         rs.getString("sex"),
                         rs.getString("lop")
-                        ));
+                ));
             }
-        } catch (Exception e){
-            e.printStackTrace();
         }
-            return list;
-        }
+
+        return list;
+    }
     public static void insert(Sinhvien sv){
         String sql = "Insert into sinhvien values(?, ?, ?, ?, ?)";
 
@@ -47,24 +47,40 @@ public class sinhvienDb{
         }
     }
     public static Sinhvien findByMasv(String masv) throws SQLException {
-        Connection conn = DB.getConnect();
         String sql = "SELECT * FROM sinhvien WHERE masv = ?";
-        PreparedStatement ps = conn.prepareStatement(sql);
-        ps.setString(1, masv);
-        ResultSet rs = ps.executeQuery();
         Sinhvien sv = null;
-        if (rs.next()) {
-            sv = new Sinhvien(
-                    rs.getString("masv"),
-                    rs.getString("ten"),
-                    rs.getString("birth"),
-                    rs.getString("sex"),
-                    rs.getString("lop")
-            );
+
+        // SỬ DỤNG TRY-WITH-RESOURCES ĐỂ ĐÓNG TỰ ĐỘNG
+        try (Connection conn = DB.getConnect();
+             PreparedStatement ps = conn.prepareStatement(sql);) {
+
+            ps.setString(1, masv);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    sv = new Sinhvien(
+                            rs.getString("masv"),
+                            rs.getString("ten"),
+                            rs.getString("birth"),
+                            rs.getString("sex"),
+                            rs.getString("lop")
+                    );
+                }
+            }
         }
-        rs.close();
-        ps.close();
-        conn.close();
         return sv;
+    }
+    public static void delete(Sinhvien sv) throws SQLException {
+        String sql = "DELETE FROM sinhvien WHERE masv = ?";
+
+        try (Connection conn = DB.getConnect();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, sv.getMasv());
+            ps.executeUpdate(); // Thực thi lệnh xóa
+
+        } catch (SQLException e) {
+            System.err.println("Lỗi SQL khi xóa sinh viên: " + e.getMessage());
+            throw e;
+        }
     }
 }
