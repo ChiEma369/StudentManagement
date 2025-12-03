@@ -7,6 +7,8 @@ import javafx.scene.Scene;
 import javafx.scene.control.TabPane;
 import javafx.stage.Stage;
 
+import java.sql.SQLException;
+
 public class Mainapp extends Application {
 
     private static ObservableList<Sinhvien> sinhvien = FXCollections.observableArrayList();
@@ -15,15 +17,28 @@ public class Mainapp extends Application {
         return sinhvien;
     }
 
-    @Override
+
     public void start(Stage stage) {
+        //phai co
+    }
+
+    public static void openMain(Stage stage) {
         System.out.println("Start Mainapp");
+
 
         TabSV tabSV = new TabSV(sinhvien, stage);
         TabDiem tabDiem = new TabDiem(sinhvien, stage);
+        TabThongke tabThongke = new TabThongke();
+
+        try {
+            tabDiem.loadDiemData();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
 
         TabPane tabPane = new TabPane();
         tabPane.getTabs().addAll(tabSV, tabDiem);
+        tabPane.getTabs().addAll(tabSV, tabDiem, tabThongke);
 
         Scene scene = new Scene(tabPane, 1200, 700);
         stage.setScene(scene);
@@ -32,6 +47,6 @@ public class Mainapp extends Application {
     }
 
     public static void main(String[] args) {
-        launch();
+        launch(TabLog.class, args);
     }
 }

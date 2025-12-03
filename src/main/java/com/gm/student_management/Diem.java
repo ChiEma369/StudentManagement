@@ -3,13 +3,13 @@ package com.gm.student_management;
 public class Diem {
     private Sinhvien sv;
     private String mon;
-    private String lop;
+    private String namhoc;
     private double diem;
 
     public Diem(Sinhvien sv, String mon, String lop, double diem) {
         this.sv = sv;
         this.mon = mon;
-        this.lop = lop;
+        this.namhoc = namhoc;
         this.diem = diem;
     }
     public Sinhvien getSv() {return sv;}
@@ -18,8 +18,8 @@ public class Diem {
     public String getMon() {return mon;}
     public void setMon(String m) {mon = m;}
 
-    public String getLop() {return lop;}
-    public void setLop(String l) {lop = l;}
+    public String getNam() {return namhoc;}
+    public void setNam(String l) {namhoc = l;}
 
     public double getDiem() {return diem;}
     public void setDiem(double d) {diem = d;}

@@ -13,23 +13,27 @@ import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
 
+import java.sql.SQLException;
+
 public class TabDiem extends Tab {
     private ObservableList<Diem> listDiem = FXCollections.observableArrayList();
-
     private ObservableList<Sinhvien> sinhvien;
-    public void loadDiemData() {
+
+    public void loadDiemData() throws SQLException {
         try {
-            // Xóa dữ liệu cũ trước khi tải
             listDiem.clear();
-            // Gọi hàm tai
-            listDiem.addAll(DB.getAllDiem());
-        } catch (Exception ex) {
+            listDiem.addAll(DB.loadAllDiem(this.sinhvien));
+
+        } catch (SQLException ex) {
             ex.printStackTrace();
-            new Alert(Alert.AlertType.ERROR, "Không thể load điểm từ database. " + ex.getMessage()).show();
+            new Alert(Alert.AlertType.ERROR,
+                    "Không thể load điểm từ database. Vui lòng kiểm tra Server MySQL. Chi tiết: " + ex.getMessage()).show();
         }
+
     }
     public TabDiem(ObservableList<Sinhvien> sinhvien, Stage stage) {
         setText("Quản lý điểm");
+        this.sinhvien = sinhvien;
 
         BorderPane bp = new BorderPane();
         GridPane grid = new GridPane();
@@ -73,7 +77,7 @@ public class TabDiem extends Tab {
         });
 
         TextField txtDiem = new TextField();
-        TextField txtMalop = new TextField();
+        TextField txtNamhoc = new TextField();
         Button Them = new Button("Thêm điểm");
         Button xoa = new Button("Xóa");
         HBox button = new HBox(10);
@@ -82,7 +86,7 @@ public class TabDiem extends Tab {
         grid.add(new Label("Môn:"), 0, 1); grid.add(cbMon, 1, 1);
         grid.add(new Label("Điểm:"), 0, 2); grid.add(txtDiem, 1, 2);
         Label lbml = new Label("Mã lớp");
-        grid.add(lbml,  0, 3);    grid.add(txtMalop, 1, 3);
+        grid.add(lbml,  0, 3);    grid.add(txtNamhoc, 1, 3);
         button.getChildren().addAll(Them, xoa);
         grid.add(button, 1, 4);
 
@@ -95,24 +99,65 @@ public class TabDiem extends Tab {
         TableColumn<Diem, String> colmon = new TableColumn<>("Môn học");
         colmon.setCellValueFactory(new PropertyValueFactory<>("mon"));
 
-        TableColumn<Diem, String> colmalop = new TableColumn<>("Mã lớp");
-        colmalop.setCellValueFactory(new PropertyValueFactory<>("lop"));        //trung ten getter
+        TableColumn<Diem, String> colNam = new TableColumn<>("Năm học");
+        colNam.setCellValueFactory(new PropertyValueFactory<>("namhoc"));        //trung ten getter
 
-        TableColumn<Diem, String> coldiem = new TableColumn<>("Điểm");
+        TableColumn<Diem, Double> coldiem = new TableColumn<>("Điểm");
         coldiem.setCellValueFactory(new PropertyValueFactory<>("diem"));
+        coldiem.setCellFactory(TextFieldTableCell.forTableColumn(new StringConverter<Double>() {
+            @Override
+            public String toString(Double object) {
+                // Chuyển Double thành String để hiển thị
+                return object == null ? "" : object.toString();
+            }
+
+            @Override
+            public Double fromString(String string) {
+                // Chuyển String người dùng nhập thành Double
+                try {
+                    return Double.parseDouble(string);
+                } catch (NumberFormatException e) {
+                    new Alert(Alert.AlertType.ERROR, "Điểm phải là số thực!").show();
+                    return null; // Trả về null để hủy bỏ việc cập nhật
+                }
+            }
+        }));
+
+        coldiem.setOnEditCommit(e -> {
+            Double newValue = e.getNewValue();
+            Diem diemToUpdate = e.getRowValue();
+
+            if (newValue != null) {
+                try {
+                    diemToUpdate.setDiem(newValue);
+                    DB.updateDiem(diemToUpdate); // Gọi hàm cập nhật CSDL
+                } catch (Exception ex) {
+                    new Alert(Alert.AlertType.ERROR, "Lỗi cập nhật điểm vào CSDL: " + ex.getMessage()).show();
+                    // Tải lại bảng để quay về giá trị cũ
+                    e.getTableView().refresh();
+                }
+            }
+        });
         TableColumn<Diem, String> colgpa = new TableColumn<>("GPA");
         colgpa.setCellValueFactory(c -> new SimpleStringProperty(String.format("%.2f", c.getValue().getGPA())));
 
-        tableDiem.getColumns().addAll(colMsv, colten, colmon, colmalop, coldiem, colgpa);
+        tableDiem.getColumns().addAll(colMsv, colten, colmon, colNam, coldiem, colgpa);
         tableDiem.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+
+        // load du lieu
+        try {
+            loadDiemData();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
 
         Them.setOnAction(e -> {
             Sinhvien sv = cbSV.getValue();
             String mon = cbMon.getValue();
-            String lop = txtMalop.getText().trim();
+            String namhoc = txtNamhoc.getText().trim();
             String diemStr = txtDiem.getText().trim();
 
-            if (sv == null || mon == null || diemStr.isEmpty() || lop.isEmpty()) return;
+            if (sv == null || mon == null || diemStr.isEmpty() || namhoc.isEmpty()) return;
             double val;
             try {
                 val = Double.parseDouble(diemStr);
@@ -121,7 +166,7 @@ public class TabDiem extends Tab {
                 return;
             }
 
-            Diem d = new Diem(sv, mon, lop, val);
+            Diem d = new Diem(sv, mon, namhoc, val);
             // 1. Thêm vào DB
             try {
                 DB.insertDiem(d); // viết 1 method trong class DB để insert vào table diem
@@ -147,6 +192,14 @@ public class TabDiem extends Tab {
                 }
             }
         });
+
+        // load diem data
+        try {
+            loadDiemData();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
         bp.setLeft(grid);
         bp.setCenter(tableDiem);
         setContent(bp);
