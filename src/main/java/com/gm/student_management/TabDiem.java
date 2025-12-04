@@ -67,7 +67,20 @@ public class TabDiem extends Tab {
         });
 
         TextField txtDiem = new TextField();
-        TextField txtNamhoc = new TextField();
+        ComboBox<String> cbNamhoc = new ComboBox<>();
+        cbNamhoc.setEditable(true);  // vua chon vua nhap moi
+        cbNamhoc.setPrefWidth(150);
+
+        try {
+            // Lấy danh sách năm từ db
+            cbNamhoc.setItems(FXCollections.observableArrayList(DB.getDsNamhoc()));
+
+            if (!cbNamhoc.getItems().isEmpty()) {
+                cbNamhoc.getSelectionModel().selectFirst();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
 
         Label title = new Label("THÊM THÔNG TIN ĐIỂM SINH VIÊN");
         title.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;"); // Làm đậm cho đẹp
@@ -81,7 +94,7 @@ public class TabDiem extends Tab {
         grid.add(txtDiem, 1, 3);
         Label lbNam = new Label("Năm học:");
         grid.add(lbNam, 0, 4);
-        grid.add(txtNamhoc, 1, 4);
+        grid.add(cbNamhoc, 1, 4);
 
 
         tableDiem = new TableView<>(listDiem); // <<< SỬA DÒNG NÀY
@@ -99,11 +112,16 @@ public class TabDiem extends Tab {
         Them.setOnAction(e -> {
             Sinhvien sv = cbSV.getValue();
             String mon = cbMon.getValue();
-            String namhoc = txtNamhoc.getText().trim();
+
+            String namhoc = "";
+            if (cbNamhoc.getValue() != null) {
+                namhoc = cbNamhoc.getValue().trim();
+            }
+
             String diemStr = txtDiem.getText().trim();
 
             if (sv == null || mon == null || diemStr.isEmpty() || namhoc.isEmpty()) {
-                new Alert(Alert.AlertType.WARNING, "Vui lòng nhập đủ thông tin!").show();
+                new Alert(Alert.AlertType.WARNING, "Vui lòng nhập đủ thông tin (Sinh viên, Môn, Năm, Điểm)!").show();
                 return;
             }
 
@@ -117,14 +135,20 @@ public class TabDiem extends Tab {
             }
 
             Diem d = new Diem(sv, mon, namhoc, val);
+
             try {
                 DB.insertDiem(d);
                 listDiem.add(d);
                 tableDiem.refresh();
 
+                if (!cbNamhoc.getItems().contains(namhoc)) {
+                    cbNamhoc.getItems().add(0, namhoc); // Thêm vào đầu danh sách
+                    cbNamhoc.getSelectionModel().select(namhoc);
+                }
+
             } catch (Exception ex) {
                 ex.printStackTrace();
-                new Alert(Alert.AlertType.ERROR, "Lỗi lưu database (Có thể trùng môn/năm học)!").show();
+                new Alert(Alert.AlertType.ERROR, "Lỗi: Sinh viên này đã có điểm môn " + mon + " trong năm " + namhoc + " rồi!").show();
             }
         });
 
@@ -157,7 +181,7 @@ public class TabDiem extends Tab {
 
         HBox nhap = new HBox(10);
         nhap.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
-        nhap.setPadding(new Insets(0, 0, 10, 0)); // Cách bảng bên dưới 10px
+        nhap.setPadding(new Insets(0, 0, 10, 0));
         nhap.getChildren().addAll(new Label("Tra cứu điểm:"), txtSearch, timMa, load);
 
 
@@ -190,14 +214,15 @@ public class TabDiem extends Tab {
         });
 
 
-        javafx.scene.layout.VBox centerLayout = new javafx.scene.layout.VBox();
+        javafx.scene.layout.VBox centerLayout = new javafx.scene.layout.VBox(10);
         centerLayout.getChildren().addAll(nhap, tableDiem);
 
         javafx.scene.layout.VBox.setVgrow(tableDiem, javafx.scene.layout.Priority.ALWAYS);
 
-
-        bp.setLeft(grid);           // Form nhập liệu bên TRÁI
-        bp.setCenter(centerLayout); // Cụm (Tìm kiếm + Bảng) ở GIỮA
+        bp.setPadding(new Insets(10));
+        bp.setLeft(grid);
+        BorderPane.setMargin(grid, new Insets(0, 20, 0, 0));
+        bp.setCenter(centerLayout);
 
         setContent(bp);
     }
@@ -210,9 +235,6 @@ public class TabDiem extends Tab {
 
         TableColumn<Diem, String> colmon = new TableColumn<>("Môn học");
         colmon.setCellValueFactory(new PropertyValueFactory<>("mon"));
-
-        TableColumn<Diem, String> colNam = new TableColumn<>("Năm học");
-        colNam.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getNamhoc()));
 
         TableColumn<Diem, Double> coldiem = new TableColumn<>("Điểm");
         coldiem.setCellValueFactory(new PropertyValueFactory<>("diem"));
@@ -259,7 +281,10 @@ public class TabDiem extends Tab {
         TableColumn<Diem, String> colgpa = new TableColumn<>("GPA");
         colgpa.setCellValueFactory(c -> new SimpleStringProperty(String.format("%.2f", c.getValue().getGPA())));
 
-        tableDiem.getColumns().addAll(colMsv, colten, colmon, colNam, coldiem, colgpa);
+        TableColumn<Diem, String> colNam = new TableColumn<>("Năm học");
+        colNam.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getNamhoc()));
+
+        tableDiem.getColumns().addAll(colMsv, colten, colmon, coldiem, colgpa, colNam);
         tableDiem.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
     }
     public ObservableList<Diem> getListDiem(){
