@@ -29,9 +29,34 @@ public class DB {
                 }
             }
         }
-        return false; //sai nguoi dung, mkhau
+        return false;
     }
 
+    public static List<Diem> getDiemByMasv(String masv) throws SQLException {
+        List<Diem> list = new ArrayList<>();
+        String sql = "SELECT d.masv, d.mon, d.namhoc, d.diem " + "FROM diem d " + "WHERE d.masv = ?";
+
+        try (Connection conn = getConnect();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, masv);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Sinhvien sv = sinhvienDb.findByMasv(rs.getString("masv"));
+                    if (sv != null) {
+                        list.add(new Diem(
+                                sv,
+                                rs.getString("mon"),
+                                rs.getString("namhoc"),
+                                rs.getDouble("diem")
+                        ));
+                    }
+                }
+            }
+        }
+        return list;
+    }
     public static void updateDiem(Diem d) throws SQLException {
         String sql = "UPDATE diem SET diem=? WHERE masv=? AND mon=? AND namhoc=?";
 
@@ -106,26 +131,26 @@ public class DB {
     public static int[] ThongKe(String tenMon, String gioiTinh, String namhoc) throws SQLException {
         int[] ketqua = {0, 0, 0, 0, 0};
 
-        String sql = "SELECT d.diem FROM diem d " + "JOIN sinhvien s ON d.masv = s.masv " + "WHERE d.mon = ? AND d.namhoc = ?";
+        StringBuilder sql = new StringBuilder();
+        sql.append("SELECT d.diem FROM diem d JOIN sinhvien s ON d.masv = s.masv WHERE d.mon = ?");
 
-        if (!namhoc.equals("Tất cả")) {
-            sql += " AND d.namhoc = ?";
+        if (namhoc != null && !namhoc.equals("Tất cả")) {
+            sql.append(" AND d.namhoc = ?");
         }
-        if (!gioiTinh.equals("Tất cả")) {
-            sql += " AND s.sex = ?";
+        if (gioiTinh != null && !gioiTinh.equals("Tất cả")) {
+            sql.append(" AND s.sex = ?");
         }
 
         try (Connection conn = getConnect();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
 
             int index = 1;
             ps.setString(index++, tenMon);
 
-            if (!namhoc.equals("Tất cả")) {
+            if (namhoc != null && !namhoc.equals("Tất cả")) {
                 ps.setString(index++, namhoc);
             }
-
-            if (!gioiTinh.equals("Tất cả")) {
+            if (gioiTinh != null && !gioiTinh.equals("Tất cả")) {
                 ps.setString(index++, gioiTinh);
             }
 
@@ -157,6 +182,8 @@ public class DB {
     public static List<String> getDsNamhoc() throws SQLException {
         List<String> list = new ArrayList<>();
         String sql = "SELECT DISTINCT namhoc FROM diem ORDER BY namhoc DESC";
+        System.out.println("Đang lấy năm học từ: " + URL);  //debug
+
         try (Connection conn = getConnect();
              Statement st = conn.createStatement();
              ResultSet rs = st.executeQuery(sql)) {
