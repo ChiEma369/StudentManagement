@@ -167,7 +167,7 @@ public class TabSV extends Tab {
             Sinhvien sel = table.getSelectionModel().getSelectedItem();
             if (sel != null) {
                 try {
-                    sinhvienDb.delete(sel); // <<< GỌI HÀM XÓA TRONG CSDL
+                    sinhvienDb.delete(sel);
                     sinhvien.remove(sel);    // Xóa trên giao diện
                     new Alert(Alert.AlertType.INFORMATION, "Đã xóa sinh viên thành công.").show();
                 } catch (SQLException ex) {

@@ -108,6 +108,9 @@ public class DB {
 
         String sql = "SELECT d.diem FROM diem d " + "JOIN sinhvien s ON d.masv = s.masv " + "WHERE d.mon = ? AND d.namhoc = ?";
 
+        if (!namhoc.equals("Tất cả")) {
+            sql += " AND d.namhoc = ?";
+        }
         if (!gioiTinh.equals("Tất cả")) {
             sql += " AND s.sex = ?";
         }
@@ -115,10 +118,15 @@ public class DB {
         try (Connection conn = getConnect();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            ps.setString(1, tenMon);
-            ps.setString(2, namhoc);
+            int index = 1;
+            ps.setString(index++, tenMon);
+
+            if (!namhoc.equals("Tất cả")) {
+                ps.setString(index++, namhoc);
+            }
+
             if (!gioiTinh.equals("Tất cả")) {
-                ps.setString(3, gioiTinh);
+                ps.setString(index++, gioiTinh);
             }
 
             try (ResultSet rs = ps.executeQuery()) {

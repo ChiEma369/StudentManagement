@@ -12,6 +12,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 
 import java.sql.SQLException;
+import java.util.List;
 
 public class TabThongke extends Tab {
 
@@ -78,8 +79,10 @@ public class TabThongke extends Tab {
             cbMon.setItems(FXCollections.observableArrayList(DB.getDsMon()));
             if (!cbMon.getItems().isEmpty()) { cbMon.getSelectionModel().selectFirst(); }
 
-            cbNamhoc.setItems(FXCollections.observableArrayList(DB.getDsNamhoc()));
-            if (!cbNamhoc.getItems().isEmpty()) cbNamhoc.getSelectionModel().selectFirst();
+            List<String> listNam = DB.getDsNamhoc();
+            listNam.add(0, "Tất cả");
+            cbNamhoc.setItems(FXCollections.observableArrayList(listNam));
+            cbNamhoc.getSelectionModel().selectFirst();
 
         } catch (SQLException e) {
             e.printStackTrace();
