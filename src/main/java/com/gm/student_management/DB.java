@@ -31,6 +31,7 @@ public class DB {
         }
         return false; //sai nguoi dung, mkhau
     }
+
     public static void updateDiem(Diem d) throws SQLException {
         String sql = "UPDATE diem SET diem=? WHERE masv=? AND mon=? AND namhoc=?";
 
@@ -41,7 +42,7 @@ public class DB {
             ps.setDouble(1, d.getDiem());
             ps.setString(2, d.getSv().getMasv());
             ps.setString(3, d.getMon());
-            ps.setString(4, d.getNam());
+            ps.setString(4, d.getNamhoc());
 
             ps.executeUpdate();
 
@@ -57,7 +58,7 @@ public class DB {
 
             ps.setString(1, d.getSv().getMasv());
             ps.setString(2, d.getMon());
-            ps.setString(3, d.getNam());
+            ps.setString(3, d.getNamhoc());
             ps.setDouble(4, d.getDiem());
             ps.executeUpdate();
         }
@@ -70,7 +71,7 @@ public class DB {
 
             ps.setString(1, d.getSv().getMasv());
             ps.setString(2, d.getMon());
-            ps.setString(3, d.getNam());
+            ps.setString(3, d.getNamhoc());
             ps.executeUpdate();
         }
     }
@@ -101,26 +102,11 @@ public class DB {
         return list;
     }
 
-    public static List<Diem> getAllDiem() throws SQLException {
-        List<Diem> list = new ArrayList<>();
-        Connection conn = getConnect();
-        Statement st = conn.createStatement();
-        ResultSet rs = st.executeQuery("SELECT * FROM diem");
-        while (rs.next()) {
-            Sinhvien sv = sinhvienDb.findByMasv(rs.getString("masv"));
-
-            if (sv != null) {
-                list.add(new Diem(sv, rs.getString("mon"), rs.getString("namhoc"), rs.getDouble("diem")));
-            }
-        }
-        rs.close(); st.close(); conn.close();
-        return list;
-    }
     // thong ke diem
     public static int[] ThongKe(String tenMon, String gioiTinh, String namhoc) throws SQLException {
         int[] ketqua = {0, 0, 0, 0, 0};
 
-        String sql = "SELECT d.diem FROM diem d " + "JOIN sinhvien s ON d.masv = s.masv " + "WHERE d.mon = ? ? AND d.namhoc = ?";
+        String sql = "SELECT d.diem FROM diem d " + "JOIN sinhvien s ON d.masv = s.masv " + "WHERE d.mon = ? AND d.namhoc = ?";
 
         if (!gioiTinh.equals("Tất cả")) {
             sql += " AND s.sex = ?";

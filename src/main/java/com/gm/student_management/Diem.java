@@ -6,7 +6,7 @@ public class Diem {
     private String namhoc;
     private double diem;
 
-    public Diem(Sinhvien sv, String mon, String lop, double diem) {
+    public Diem(Sinhvien sv, String mon, String namhoc, double diem) {
         this.sv = sv;
         this.mon = mon;
         this.namhoc = namhoc;
@@ -18,8 +18,8 @@ public class Diem {
     public String getMon() {return mon;}
     public void setMon(String m) {mon = m;}
 
-    public String getNam() {return namhoc;}
-    public void setNam(String l) {namhoc = l;}
+    public String getNamhoc() {return namhoc;}
+    public void setNamhoc(String n) {namhoc = n;}
 
     public double getDiem() {return diem;}
     public void setDiem(double d) {diem = d;}

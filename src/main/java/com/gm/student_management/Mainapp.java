@@ -30,12 +30,6 @@ public class Mainapp extends Application {
         TabDiem tabDiem = new TabDiem(sinhvien, stage);
         TabThongke tabThongke = new TabThongke();
 
-        try {
-            tabDiem.loadDiemData();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-
         TabPane tabPane = new TabPane();
         tabPane.getTabs().addAll(tabSV, tabDiem);
         tabPane.getTabs().addAll(tabSV, tabDiem, tabThongke);

@@ -46,6 +46,29 @@ public class sinhvienDb{
             e.printStackTrace();
         }
     }
+    public static List<Sinhvien> searchName(String ten) throws SQLException {
+        List<Sinhvien> list = new ArrayList<>();
+        String sql = "SELECT * FROM sinhvien WHERE ten LIKE ?";
+
+        // tim kiem tuong doi
+        try (Connection conn = DB.getConnect();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, "%" + ten + "%");
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(new Sinhvien(
+                            rs.getString("masv"),
+                            rs.getString("ten"),
+                            rs.getString("birth"),
+                            rs.getString("sex"),
+                            rs.getString("lop")
+                    ));
+                }
+            }
+        }
+        return list;
+    }
     public static Sinhvien findByMasv(String masv) throws SQLException {
         String sql = "SELECT * FROM sinhvien WHERE masv = ?";
         Sinhvien sv = null;

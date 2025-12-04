@@ -2,6 +2,7 @@ package com.gm.student_management;
 
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.control.TableView;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -9,6 +10,7 @@ import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
@@ -91,12 +93,56 @@ public class TabSV extends Tab {
         button.getChildren().addAll(add, huy, savefi, loadfi, xoahang);
         grid.add(button, 0, 6);
 
+        // phan tim kiem sinh vien
 
-        BorderPane pane =  new BorderPane();
+        TextField txtSearch = new TextField();
+        txtSearch.setPromptText("Nhập tên sinh viên cần tìm: ");
+        txtSearch.setPrefWidth(300);
+
+        Button btnSearch = new Button("Tìm kiếm");
+        btnSearch.setStyle("-fx-background-color: #2196F3; -fx-text-fill: white;");
+        Button btnReload = new Button("Tải lại bảng");
+
+        HBox searchBox = new HBox(10);
+        searchBox.setPadding(new Insets(0, 0, 10, 0));
+        searchBox.setAlignment(Pos.CENTER_LEFT);
+        searchBox.getChildren().addAll(new Label("Tìm kiếm:"), txtSearch, btnSearch, btnReload);
+
+// Logic tìm kiếm
+        btnSearch.setOnAction(e -> {
+            String keyword = txtSearch.getText().trim();
+            if (keyword.isEmpty()) {
+                new Alert(Alert.AlertType.WARNING, "Vui lòng nhập tên để tìm!").show();
+                return;
+            }
+            try {
+                sinhvien.clear();
+                sinhvien.addAll(sinhvienDb.searchName(keyword));
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+                new Alert(Alert.AlertType.ERROR, "Lỗi khi tìm kiếm!").show();
+            }
+        });
+
+        txtSearch.setOnAction(e -> btnSearch.fire());
+
+        btnReload.setOnAction(e -> {
+            txtSearch.clear();
+            loadData();
+        });
+
+
+        VBox centerLayout = new VBox(10);
+        centerLayout.getChildren().addAll(searchBox, table);
+
+        javafx.scene.layout.VBox.setVgrow(table, javafx.scene.layout.Priority.ALWAYS);
+
+        BorderPane pane = new BorderPane();
+        pane.setPadding(new Insets(10));
         pane.setLeft(grid);
-        pane.setCenter(table);
+        BorderPane.setMargin(grid, new Insets(0, 20, 0, 0));
+        pane.setCenter(centerLayout);
 
-        BorderPane.setMargin(grid, new Insets(0,20, 0, 0));
         setContent(pane);
 
         // load du lieu
