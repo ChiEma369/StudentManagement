@@ -73,7 +73,6 @@ public class sinhvienDb{
         String sql = "SELECT * FROM sinhvien WHERE masv = ?";
         Sinhvien sv = null;
 
-        // SỬ DỤNG TRY-WITH-RESOURCES ĐỂ ĐÓNG TỰ ĐỘNG
         try (Connection conn = DB.getConnect();
              PreparedStatement ps = conn.prepareStatement(sql);) {
 

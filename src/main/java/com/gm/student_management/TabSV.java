@@ -24,12 +24,10 @@ public class TabSV extends Tab {
 
     private void loadData() {
         try {
-            sinhvien.clear(); // Xóa dữ liệu cũ trên giao diện
-            // SỬA: Gọi hàm getAll() từ lớp DAO
+            sinhvien.clear();
             sinhvien.addAll(sinhvienDb.getAll());
 
         } catch (SQLException e) {
-            // Xử lý nếu kết nối DB thất bại
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("Lỗi CSDL");
             alert.setHeaderText("Không thể tải dữ liệu sinh viên!");
@@ -47,9 +45,7 @@ public class TabSV extends Tab {
         grid.setHgap(10);
         grid.setVgap(10);
 
-        Label title = new Label("THÊM THÔNG TIN SINH VIÊN");
         Label lbten = new Label("Họ và tên:");
-        ;
         TextField ten = new TextField();
 
         Label lbsex = new Label("Giới tính:");
@@ -65,23 +61,23 @@ public class TabSV extends Tab {
         TextField lop = new TextField();
 
 
-        grid.add(title, 0, 0);
+        Label title = new Label("THÊM THÔNG TIN SINH VIÊN");
+        title.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
+        grid.add(title, 0, 0, 2, 1);
 
-        HBox h1 = new HBox(5, lbten, ten);
-        HBox h2 = new HBox(5, lbsex, gt);
-        HBox h3 = new HBox(5, lbbirth, birth);
-        HBox h4 = new HBox(5, lbmasv, masv);
-        HBox h5 = new HBox(5, lblop, lop);
-
-        grid.add(h1, 0, 1, 2, 1);
-        grid.add(h2, 0, 2, 2, 1);
-        grid.add(h3, 0, 3, 2, 1);
-        grid.add(h4, 0, 4, 2, 1);
-        grid.add(h5, 0, 5, 2, 1);
+        grid.add(lbten, 0, 1);
+        grid.add(ten, 1, 1);
+        grid.add(lbsex, 0, 2);
+        grid.add(gt, 1, 2);
+        grid.add(lbbirth, 0, 3);
+        grid.add(birth, 1, 3);
+        grid.add(lbmasv, 0, 4);
+        grid.add(masv, 1, 4);
+        grid.add(lblop, 0, 5);
+        grid.add(lop, 1, 5);
 
         table = new TableView<>(sinhvien);
         createColumns();
-
         table.setEditable(true);
 
         Button add = new Button("Thêm mới");
@@ -89,9 +85,8 @@ public class TabSV extends Tab {
         Button xoahang = new Button("Xóa");
         HBox button = new HBox(10);
         Button savefi = new Button("Lưu bảng");
-        Button loadfi = new Button("Mở bảng");
-        button.getChildren().addAll(add, huy, savefi, loadfi, xoahang);
-        grid.add(button, 0, 6);
+        button.getChildren().addAll(add, huy, savefi, xoahang);
+        grid.add(button, 1, 6);
 
         // phan tim kiem sinh vien
 
@@ -99,17 +94,39 @@ public class TabSV extends Tab {
         txtSearch.setPromptText("Nhập tên sinh viên cần tìm: ");
         txtSearch.setPrefWidth(300);
 
-        Button btnSearch = new Button("Tìm kiếm");
-        btnSearch.setStyle("-fx-background-color: #2196F3; -fx-text-fill: white;");
-        Button btnReload = new Button("Tải lại bảng");
+        Button timTen = new Button("Tìm kiếm");
+        timTen.setStyle("-fx-background-color: #00BFFF; -fx-text-fill: white;");
 
-        HBox searchBox = new HBox(10);
-        searchBox.setPadding(new Insets(0, 0, 10, 0));
-        searchBox.setAlignment(Pos.CENTER_LEFT);
-        searchBox.getChildren().addAll(new Label("Tìm kiếm:"), txtSearch, btnSearch, btnReload);
+        Button timMa = new Button("Tìm theo Mã");
+        timMa.setStyle("-fx-background-color: #00BFFF; -fx-text-fill: white;");
 
-// Logic tìm kiếm
-        btnSearch.setOnAction(e -> {
+        Button load = new Button("Tải lại");
+
+        HBox nhap = new HBox(10);
+        nhap.setPadding(new Insets(0, 0, 10, 0));
+        nhap.setAlignment(Pos.CENTER_LEFT);
+        nhap.getChildren().addAll(new Label("Tìm kiếm:"), txtSearch, timTen, timMa, load);
+
+        timMa.setOnAction(e -> {
+            String ma = txtSearch.getText().trim();
+            if (ma.isEmpty()) {
+                new Alert(Alert.AlertType.WARNING, "Vui lòng nhập Mã SV!").show();
+                return;
+            }
+            try {
+                Sinhvien sv = sinhvienDb.findByMasv(ma);
+
+                sinhvien.clear();
+                if (sv != null) {
+                    sinhvien.add(sv);
+                } else {
+                    new Alert(Alert.AlertType.INFORMATION, "Không tìm thấy sinh viên có mã: " + ma).show();
+                }
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+        });
+        timTen.setOnAction(e -> {
             String keyword = txtSearch.getText().trim();
             if (keyword.isEmpty()) {
                 new Alert(Alert.AlertType.WARNING, "Vui lòng nhập tên để tìm!").show();
@@ -124,16 +141,16 @@ public class TabSV extends Tab {
             }
         });
 
-        txtSearch.setOnAction(e -> btnSearch.fire());
+        txtSearch.setOnAction(e -> timTen.fire());
 
-        btnReload.setOnAction(e -> {
+        timTen.setOnAction(e -> {
             txtSearch.clear();
             loadData();
         });
 
 
         VBox centerLayout = new VBox(10);
-        centerLayout.getChildren().addAll(searchBox, table);
+        centerLayout.getChildren().addAll(nhap, table);
 
         javafx.scene.layout.VBox.setVgrow(table, javafx.scene.layout.Priority.ALWAYS);
 
@@ -186,10 +203,6 @@ public class TabSV extends Tab {
                     "Dữ liệu đã lưu tự động vào MySQL").show();
         });
 
-        loadfi.setOnAction(e -> {
-            loadData();
-            new Alert(Alert.AlertType.INFORMATION, "Đã nạp lại dữ liệu từ MySQL").show();
-        });
     }
 
         public void clearF(TextField... fields) {
